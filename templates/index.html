@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Search Explorer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▶</span>
+      <h1>YouTube Search Explorer</h1>
+      <div class="topbar-right">
+        <div class="quota" title="Approximate API units used this session">
+          Quota: <strong id="quota-used">0</strong> / 10,000
+          <button type="button" id="quota-reset" class="ghost small">reset</button>
+        </div>
+      </div>
+    </div>
+    <p class="tagline">Search the YouTube Data API v3 by every parameter it supports — with filters, insights, and saved searches.</p>
+    {% if not has_key %}
+    <div class="warning">
+      No <code>YOUTUBE_API_KEY</code> found. Copy <code>.env.example</code> to <code>.env</code> and add your key.
+    </div>
+    {% endif %}
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="group saved-group">
+        <h2>Saved searches</h2>
+        <div class="saved-row">
+          <select id="saved-select">
+            <option value="">— pick saved search —</option>
+          </select>
+          <button type="button" id="saved-load" class="ghost small">Load</button>
+          <button type="button" id="saved-delete" class="ghost small">Delete</button>
+        </div>
+        <div class="saved-row">
+          <input type="text" id="saved-name" placeholder="Name to save current filters..." />
+          <button type="button" id="saved-save" class="primary small">Save</button>
+        </div>
+      </section>
+
+      <form id="search-form">
+        <section class="group">
+          <h2>Query</h2>
+          <label>
+            <span>Search term (q)</span>
+            <input type="text" name="q" placeholder="e.g. lofi beats" autofocus />
+          </label>
+          <label>
+            <span>Exclude terms (comma separated)</span>
+            <input type="text" name="excludeTerms" placeholder="shorts, remix" />
+          </label>
+          <label>
+            <span>Any-of terms (OR, comma separated)</span>
+            <input type="text" name="orTerms" placeholder="chill, ambient, focus" />
+          </label>
+          <label>
+            <span>Title/description regex (post-filter)</span>
+            <input type="text" name="titleRegex" placeholder="^\[.*\]|\b(review|tutorial)\b" />
+          </label>
+          <label>
+            <span>Type</span>
+            <select name="type">
+              <option value="">Any (video, channel, playlist)</option>
+              <option value="video">Video</option>
+              <option value="channel">Channel</option>
+              <option value="playlist">Playlist</option>
+              <option value="video,channel">Video + Channel</option>
+              <option value="video,playlist">Video + Playlist</option>
+              <option value="channel,playlist">Channel + Playlist</option>
+            </select>
+          </label>
+          <label>
+            <span>Order</span>
+            <select name="order">
+              <option value="">Relevance (default)</option>
+              <option value="date">Date</option>
+              <option value="rating">Rating</option>
+              <option value="relevance">Relevance</option>
+              <option value="title">Title</option>
+              <option value="videoCount">Video count</option>
+              <option value="viewCount">View count</option>
+            </select>
+          </label>
+          <label>
+            <span>Max results (1-50)</span>
+            <input type="number" name="maxResults" min="1" max="50" value="25" />
+          </label>
+          <label>
+            <span>Safe search</span>
+            <select name="safeSearch">
+              <option value="">Default</option>
+              <option value="none">None</option>
+              <option value="moderate">Moderate</option>
+              <option value="strict">Strict</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="group">
+          <h2>Date &amp; Region</h2>
+          <label>
+            <span>Published after</span>
+            <input type="datetime-local" name="publishedAfter" />
+          </label>
+          <label>
+            <span>Published before</span>
+            <input type="datetime-local" name="publishedBefore" />
+          </label>
+          <label>
+            <span>Region code (ISO 3166-1)</span>
+            <input type="text" name="regionCode" placeholder="US, GB, JP..." maxlength="2" />
+          </label>
+          <label>
+            <span>Relevance language (ISO 639-1)</span>
+            <input type="text" name="relevanceLanguage" placeholder="en, es, fr..." maxlength="5" />
+          </label>
+        </section>
+
+        <section class="group">
+          <h2>Channel</h2>
+          <label>
+            <span>Channel ID</span>
+            <input type="text" name="channelId" placeholder="UCxxxx..." />
+          </label>
+          <label>
+            <span>Channel type</span>
+            <select name="channelType">
+              <option value="">Any</option>
+              <option value="any">any</option>
+              <option value="show">show</option>
+            </select>
+          </label>
+          <label>
+            <span>Topic ID</span>
+            <input type="text" name="topicId" placeholder="/m/..." />
+          </label>
+          <label>
+            <span>Min subscribers (post-filter, +1 quota)</span>
+            <input type="text" name="minSubscribers" placeholder="e.g. 10000" />
+          </label>
+          <label>
+            <span>Max subscribers</span>
+            <input type="text" name="maxSubscribers" placeholder="e.g. 1000000" />
+          </label>
+          <label>
+            <span>Only these channels (IDs or names, comma/newline)</span>
+            <textarea name="includeChannels" rows="2" placeholder="UCxxxx, Some Channel Name"></textarea>
+          </label>
+          <label>
+            <span>Exclude these channels</span>
+            <textarea name="excludeChannels" rows="2" placeholder="UCxxxx, Some Channel Name"></textarea>
+          </label>
+        </section>
+
+        <section class="group">
+          <h2>Engagement (post-filter)</h2>
+          <div class="row2">
+            <label>
+              <span>Min views</span>
+              <input type="text" name="minViews" placeholder="10000" />
+            </label>
+            <label>
+              <span>Max views</span>
+              <input type="text" name="maxViews" />
+            </label>
+          </div>
+          <div class="row2">
+            <label>
+              <span>Min likes</span>
+              <input type="text" name="minLikes" />
+            </label>
+            <label>
+              <span>Max likes</span>
+              <input type="text" name="maxLikes" />
+            </label>
+          </div>
+          <div class="row2">
+            <label>
+              <span>Min comments</span>
+              <input type="text" name="minComments" />
+            </label>
+            <label>
+              <span>Max comments</span>
+              <input type="text" name="maxComments" />
+            </label>
+          </div>
+          <label>
+            <span>Min like-to-view ratio (%)</span>
+            <input type="text" name="minLikeRatio" placeholder="e.g. 2" />
+          </label>
+          <label>
+            <span>Min comment-to-view ratio (%)</span>
+            <input type="text" name="minCommentRatio" placeholder="e.g. 0.5" />
+          </label>
+        </section>
+
+        <section class="group">
+          <h2>Location</h2>
+          <label>
+            <span>Location (lat,lng)</span>
+            <input type="text" name="location" placeholder="37.42307,-122.08427" />
+          </label>
+          <label>
+            <span>Location radius</span>
+            <input type="text" name="locationRadius" placeholder="10km (max 1000km)" />
+          </label>
+        </section>
+
+        <section class="group">
+          <h2>Video filters <small>(type=video)</small></h2>
+          <label>
+            <span>Event type</span>
+            <select name="eventType">
+              <option value="">Any</option>
+              <option value="completed">Completed</option>
+              <option value="live">Live</option>
+              <option value="upcoming">Upcoming</option>
+            </select>
+          </label>
+          <label>
+            <span>Video duration (API bucket)</span>
+            <select name="videoDuration">
+              <option value="">Any</option>
+              <option value="short">Short (&lt; 4 min)</option>
+              <option value="medium">Medium (4-20 min)</option>
+              <option value="long">Long (&gt; 20 min)</option>
+            </select>
+          </label>
+          <label>
+            <span>Precise duration preset</span>
+            <select name="durationPreset">
+              <option value="">Any</option>
+              <option value="shorts">Shorts (&lt; 1 min)</option>
+              <option value="1to4">1 – 4 min</option>
+              <option value="under5">Under 5 min</option>
+              <option value="4to10">4 – 10 min</option>
+              <option value="5to15">5 – 15 min</option>
+              <option value="10to20">10 – 20 min</option>
+              <option value="15to30">15 – 30 min</option>
+              <option value="20to60">20 – 60 min</option>
+              <option value="over30">Over 30 min</option>
+              <option value="over60">Over 1 hour</option>
+            </select>
+          </label>
+          <div class="row2">
+            <label>
+              <span>Min duration</span>
+              <input type="text" name="minDuration" placeholder="1:30 or 90 or 2m30s" />
+            </label>
+            <label>
+              <span>Max duration</span>
+              <input type="text" name="maxDuration" placeholder="10:00" />
+            </label>
+          </div>
+          <label>
+            <span>Video definition <small style="color:#777">(API only distinguishes HD vs SD)</small></span>
+            <select name="videoDefinition">
+              <option value="">Any definition</option>
+              <option value="high">HD only (≥ 720p — incl. 1080p, 1440p, 4K, 8K)</option>
+              <option value="standard">SD only (&lt; 720p)</option>
+            </select>
+          </label>
+          <label>
+            <span>Video dimension</span>
+            <select name="videoDimension">
+              <option value="">Any</option>
+              <option value="2d">2D</option>
+              <option value="3d">3D</option>
+            </select>
+          </label>
+          <label>
+            <span>Video caption</span>
+            <select name="videoCaption">
+              <option value="">Any</option>
+              <option value="closedCaption">Closed caption</option>
+              <option value="none">None</option>
+            </select>
+          </label>
+          <label>
+            <span>Video category <small style="color:#777">(updates with region)</small></span>
+            <select name="videoCategoryId" id="video-category-select">
+              <option value="">Any category</option>
+              <option value="1">Film &amp; Animation</option>
+              <option value="2">Autos &amp; Vehicles</option>
+              <option value="10">Music</option>
+              <option value="15">Pets &amp; Animals</option>
+              <option value="17">Sports</option>
+              <option value="19">Travel &amp; Events</option>
+              <option value="20">Gaming</option>
+              <option value="22">People &amp; Blogs</option>
+              <option value="23">Comedy</option>
+              <option value="24">Entertainment</option>
+              <option value="25">News &amp; Politics</option>
+              <option value="26">Howto &amp; Style</option>
+              <option value="27">Education</option>
+              <option value="28">Science &amp; Technology</option>
+              <option value="29">Nonprofits &amp; Activism</option>
+            </select>
+          </label>
+          <label>
+            <span>Video type</span>
+            <select name="videoType">
+              <option value="">Any</option>
+              <option value="episode">Episode</option>
+              <option value="movie">Movie</option>
+            </select>
+          </label>
+          <label>
+            <span>Video license</span>
+            <select name="videoLicense">
+              <option value="">Any</option>
+              <option value="creativeCommon">Creative Commons</option>
+              <option value="youtube">Standard YouTube</option>
+            </select>
+          </label>
+          <label>
+            <span>Video embeddable</span>
+            <select name="videoEmbeddable">
+              <option value="">Any</option>
+              <option value="true">Embeddable only</option>
+            </select>
+          </label>
+          <label>
+            <span>Video syndicated</span>
+            <select name="videoSyndicated">
+              <option value="">Any</option>
+              <option value="true">Syndicated only</option>
+            </select>
+          </label>
+          <label>
+            <span>Paid product placement</span>
+            <select name="videoPaidProductPlacement">
+              <option value="">Any</option>
+              <option value="true">Has paid placement</option>
+              <option value="false">No paid placement</option>
+            </select>
+          </label>
+        </section>
+
+        <div class="actions">
+          <button type="submit" class="primary">Search</button>
+          <button type="reset" class="ghost">Reset</button>
+        </div>
+      </form>
+    </aside>
+
+    <section class="results">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <label class="tb-field">
+            <span>Sort</span>
+            <select id="sort-select">
+              <option value="">Default (API order)</option>
+              <option value="views-desc">Views ↓</option>
+              <option value="views-asc">Views ↑</option>
+              <option value="likes-desc">Likes ↓</option>
+              <option value="comments-desc">Comments ↓</option>
+              <option value="duration-desc">Duration ↓</option>
+              <option value="duration-asc">Duration ↑</option>
+              <option value="published-desc">Newest</option>
+              <option value="published-asc">Oldest</option>
+              <option value="title-asc">Title A→Z</option>
+              <option value="likeratio-desc">Like/View ratio ↓</option>
+            </select>
+          </label>
+          <label class="tb-field">
+            <span>View</span>
+            <select id="view-select">
+              <option value="grid">Grid</option>
+              <option value="compact">Compact</option>
+              <option value="list">List</option>
+            </select>
+          </label>
+          <label class="tb-toggle">
+            <input type="checkbox" id="hide-watched" />
+            <span>Hide watched</span>
+          </label>
+          <label class="tb-toggle">
+            <input type="checkbox" id="only-starred" />
+            <span>Starred only</span>
+          </label>
+        </div>
+        <div class="toolbar-right">
+          <button type="button" id="btn-refresh" class="ghost small" title="Re-query the API with current filters">Refresh</button>
+          <button type="button" id="btn-insights" class="ghost small">Insights</button>
+          <button type="button" id="btn-export-csv" class="ghost small">CSV</button>
+          <button type="button" id="btn-export-json" class="ghost small">JSON</button>
+          <button type="button" id="btn-copy-urls" class="ghost small">Copy URLs</button>
+          <button type="button" id="btn-copy-ids" class="ghost small">Copy IDs</button>
+          <button type="button" id="btn-clear-watched" class="ghost small" title="Clear watched history">Clear watched</button>
+        </div>
+      </div>
+
+      <div id="insights" class="insights hidden"></div>
+      <div id="status" class="status">Enter a search term and hit <kbd>Search</kbd>. Keyboard: <kbd>j</kbd>/<kbd>k</kbd> navigate, <kbd>Enter</kbd> play, <kbd>s</kbd> star, <kbd>/</kbd> focus search.</div>
+      <div id="meta" class="meta hidden"></div>
+      <div id="grid" class="grid"></div>
+      <div id="pagination" class="pagination hidden">
+        <button id="prev-btn" class="ghost">← Previous</button>
+        <button id="next-btn" class="ghost">Next →</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Video player">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+      <div class="modal-player" id="modal-player"></div>
+      <div class="modal-controls">
+        <label class="tb-toggle">
+          <input type="checkbox" id="autoplay-queue" />
+          <span>Autoplay next result</span>
+        </label>
+        <div class="speed-buttons" id="speed-buttons">
+          <span class="speed-label">Speed:</span>
+          <button type="button" data-speed="0.5" class="ghost small">0.5×</button>
+          <button type="button" data-speed="0.75" class="ghost small">0.75×</button>
+          <button type="button" data-speed="1" class="ghost small active">1×</button>
+          <button type="button" data-speed="1.25" class="ghost small">1.25×</button>
+          <button type="button" data-speed="1.5" class="ghost small">1.5×</button>
+          <button type="button" data-speed="2" class="ghost small">2×</button>
+        </div>
+        <div class="clip-inputs">
+          <label>Start <input type="text" id="clip-start" placeholder="0:00" size="5" /></label>
+          <label>End <input type="text" id="clip-end" placeholder="0:30" size="5" /></label>
+          <button type="button" id="clip-apply" class="ghost small">Apply clip</button>
+        </div>
+      </div>
+      <div class="modal-meta" id="modal-meta"></div>
+      <div class="modal-comments" id="modal-comments"></div>
+      <div class="modal-related" id="modal-related"></div>
+    </div>
+  </div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
