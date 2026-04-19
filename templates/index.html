@@ -4,6 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>YouTube Search Explorer</title>
+  <meta name="description" content="Search the YouTube Data API v3 by every parameter it supports — with advanced filters, insights, saved searches, and quota tracking." />
+  <meta name="theme-color" content="#ff1f3d" />
+
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='og-image.png') }}" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="YouTube Search Explorer" />
+  <meta property="og:title" content="YouTube Search Explorer" />
+  <meta property="og:description" content="Search YouTube by every API parameter — filters, insights, saved searches." />
+  <meta property="og:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="YouTube Search Explorer — magnifying glass over a stylized YouTube play button on a dark background." />
+  <meta property="og:url" content="{{ request.url_root }}" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="YouTube Search Explorer" />
+  <meta name="twitter:description" content="Search YouTube by every API parameter — filters, insights, saved searches." />
+  <meta name="twitter:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}" />
+
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
