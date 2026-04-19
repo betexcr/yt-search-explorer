@@ -54,6 +54,20 @@ textarea:focus { outline: none; border-color: var(--accent); background: #262626
 }
 .brand h1 { font-size: 20px; margin: 0; letter-spacing: 0.3px; }
 .topbar-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.lang-wrap { display: inline-flex; }
+.lang-select {
+  width: auto;
+  padding: 6px 28px 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+}
+.lang-select:focus { outline: none; border-color: var(--accent); }
 .quota {
   font-size: 12px;
   color: var(--muted);

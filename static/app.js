@@ -2,6 +2,9 @@
  * YouTube Search Explorer — front-end
  * ========================================================================= */
 
+// ----- i18n shortcut ---------------------------------------------------
+const t = (key, params) => (window.i18n ? window.i18n.t(key, params) : key);
+
 // ----- Elements --------------------------------------------------------
 const form = document.getElementById("search-form");
 const grid = document.getElementById("grid");
@@ -141,8 +144,8 @@ function download(filename, content, mime = "text/plain") {
 
 function copyText(text) {
   navigator.clipboard?.writeText(text).then(
-    () => toast("Copied!"),
-    () => toast("Copy failed"),
+    () => toast(t("toast.copied")),
+    () => toast(t("toast.copyFailed")),
   );
 }
 
@@ -190,7 +193,7 @@ function readHash() {
 // ----- Saved searches --------------------------------------------------
 function refreshSavedSelect() {
   const saved = LS.get(SAVED_KEY, {});
-  savedSelect.innerHTML = `<option value="">— pick saved search —</option>` +
+  savedSelect.innerHTML = `<option value="">${escapeHtml(t("saved.pick"))}</option>` +
     Object.keys(saved).sort().map(
       (name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
     ).join("");
@@ -198,13 +201,13 @@ function refreshSavedSelect() {
 
 savedSaveBtn.addEventListener("click", () => {
   const name = savedName.value.trim();
-  if (!name) { toast("Enter a name first"); return; }
+  if (!name) { toast(t("toast.enterNameFirst")); return; }
   const saved = LS.get(SAVED_KEY, {});
   saved[name] = formToObject();
   LS.set(SAVED_KEY, saved);
   refreshSavedSelect();
   savedSelect.value = name;
-  toast(`Saved "${name}"`);
+  toast(t("toast.savedAs", { name }));
 });
 
 savedLoadBtn.addEventListener("click", () => {
@@ -273,10 +276,12 @@ async function loadCategories(regionCode) {
     const d = await r.json();
     if (!r.ok || !Array.isArray(d.items)) return;
     const previous = categorySelect.value;
-    categorySelect.innerHTML = `<option value="">Any category</option>` +
-      d.items.map((c) =>
-        `<option value="${escapeHtml(c.id)}"${c.assignable ? "" : " disabled style='color:#666'"}>${escapeHtml(c.title)}${c.assignable ? "" : " (not assignable)"}</option>`
-      ).join("");
+    categorySelect.innerHTML = `<option value="">${escapeHtml(t("vf.category.any"))}</option>` +
+      d.items.map((c) => {
+        const localized = t("vf.category." + c.id);
+        const title = localized && localized !== ("vf.category." + c.id) ? localized : c.title;
+        return `<option value="${escapeHtml(c.id)}"${c.assignable ? "" : " disabled style='color:#666'"}>${escapeHtml(title)}${c.assignable ? "" : " (not assignable)"}</option>`;
+      }).join("");
     if (previous) categorySelect.value = previous;
     categoriesLoadedFor = region;
     refreshQuota();
@@ -354,19 +359,19 @@ function renderFromState() {
 function cardHtml(item, starred) {
   const stats = item.statistics || {};
   const pills = [];
-  if (stats.viewCount) pills.push(`<span class="stat">${formatNumber(stats.viewCount)} views</span>`);
-  if (stats.likeCount) pills.push(`<span class="stat">${formatNumber(stats.likeCount)} likes</span>`);
-  if (stats.commentCount) pills.push(`<span class="stat">${formatNumber(stats.commentCount)} comments</span>`);
+  if (stats.viewCount) pills.push(`<span class="stat">${formatNumber(stats.viewCount)} ${t("stat.views")}</span>`);
+  if (stats.likeCount) pills.push(`<span class="stat">${formatNumber(stats.likeCount)} ${t("stat.likes")}</span>`);
+  if (stats.commentCount) pills.push(`<span class="stat">${formatNumber(stats.commentCount)} ${t("stat.comments")}</span>`);
   if (item.duration) pills.push(`<span class="stat">${formatDuration(item.duration)}</span>`);
   if (item.publishedAt) pills.push(`<span class="stat">${formatDate(item.publishedAt)}</span>`);
   if (item.channelStats?.subscriberCount) {
-    pills.push(`<span class="stat">${formatNumber(item.channelStats.subscriberCount)} subs</span>`);
+    pills.push(`<span class="stat">${formatNumber(item.channelStats.subscriberCount)} ${t("stat.subs")}</span>`);
   }
 
   const isVideo = item.kind === "video";
   const flagBadges = [];
-  if (item.ageRestricted) flagBadges.push(`<span class="flag-badge age" title="Age-restricted — won't play inline; use Open on YouTube">18+</span>`);
-  if (isVideo && item.embeddable === false) flagBadges.push(`<span class="flag-badge noembed" title="Creator disabled embedding — use Open on YouTube">No embed</span>`);
+  if (item.ageRestricted) flagBadges.push(`<span class="flag-badge age" title="${escapeHtml(t("badge.age.title"))}">18+</span>`);
+  if (isVideo && item.embeddable === false) flagBadges.push(`<span class="flag-badge noembed" title="${escapeHtml(t("badge.noembed.title"))}">${escapeHtml(t("badge.noembed"))}</span>`);
   const thumb = `
     <div class="thumb-wrap">
       ${item.thumbnail
@@ -390,7 +395,7 @@ function cardHtml(item, starred) {
 function renderItems(items) {
   grid.innerHTML = "";
   if (!items.length) {
-    grid.innerHTML = `<div class="status">No results match current filters.</div>`;
+    grid.innerHTML = `<div class="status">${escapeHtml(t("status.noResults"))}</div>`;
     return;
   }
   const watched = getSet(WATCHED_KEY);
@@ -491,14 +496,14 @@ function openModal(item, idx = -1) {
   const cannotEmbed = item.ageRestricted || item.embeddable === false;
   if (cannotEmbed) {
     const reason = item.ageRestricted
-      ? "This video is age-restricted."
-      : "The creator disabled embedding for this video.";
+      ? t("fallback.reasonAge")
+      : t("fallback.reasonNoEmbed");
     modalPlayer.innerHTML = `
       <div class="player-fallback">
         <div class="player-fallback-icon">${item.ageRestricted ? "18+" : "⊘"}</div>
-        <div class="player-fallback-title">Can't play inline</div>
-        <div class="player-fallback-text">${escapeHtml(reason)} If you're signed in to YouTube in this browser it will play on youtube.com.</div>
-        <a class="player-fallback-btn" href="${item.url}" target="_blank" rel="noopener">Open on YouTube →</a>
+        <div class="player-fallback-title">${escapeHtml(t("fallback.cantPlay"))}</div>
+        <div class="player-fallback-text">${escapeHtml(reason)} ${escapeHtml(t("fallback.hint"))}</div>
+        <a class="player-fallback-btn" href="${item.url}" target="_blank" rel="noopener">${escapeHtml(t("modal.openYt"))}</a>
       </div>
     `;
     ytPlayer = null;
@@ -522,10 +527,10 @@ function openModal(item, idx = -1) {
   modalMeta.innerHTML = `
     <h3>${escapeHtml(item.title)}</h3>
     <div class="channel">${escapeHtml(item.channelTitle || "")}</div>
-    <a class="open-yt" href="${item.url}" target="_blank" rel="noopener">Open on YouTube →</a>
+    <a class="open-yt" href="${item.url}" target="_blank" rel="noopener">${escapeHtml(t("modal.openYt"))}</a>
   `;
-  modalComments.innerHTML = `<h4>Top comments</h4><div class="status">Loading…</div>`;
-  modalRelated.innerHTML = `<h4>More from this channel</h4><div class="status">Loading…</div>`;
+  modalComments.innerHTML = `<h4>${escapeHtml(t("modal.comments"))}</h4><div class="status">${escapeHtml(t("modal.commentsLoading"))}</div>`;
+  modalRelated.innerHTML = `<h4>${escapeHtml(t("modal.related"))}</h4><div class="status">${escapeHtml(t("modal.commentsLoading"))}</div>`;
   modal.classList.remove("hidden");
   document.body.style.overflow = "hidden";
   clipStart.value = "";
@@ -599,15 +604,15 @@ async function loadComments(videoId) {
     const r = await fetch(`/api/comments?videoId=${encodeURIComponent(videoId)}`);
     const d = await r.json();
     if (!r.ok) {
-      modalComments.innerHTML = `<h4>Top comments</h4><div class="status">Couldn't load: ${escapeHtml(d.error || r.statusText)}</div>`;
+      modalComments.innerHTML = `<h4>${escapeHtml(t("modal.comments"))}</h4><div class="status">${escapeHtml(t("modal.commentsError", { err: d.error || r.statusText }))}</div>`;
       return;
     }
     refreshQuota();
     if (!d.items.length) {
-      modalComments.innerHTML = `<h4>Top comments</h4><div class="status">No comments.</div>`;
+      modalComments.innerHTML = `<h4>${escapeHtml(t("modal.comments"))}</h4><div class="status">${escapeHtml(t("modal.commentsNone"))}</div>`;
       return;
     }
-    modalComments.innerHTML = `<h4>Top comments</h4>` + d.items.map((c) => `
+    modalComments.innerHTML = `<h4>${escapeHtml(t("modal.comments"))}</h4>` + d.items.map((c) => `
       <div class="comment">
         ${c.authorImage ? `<img src="${c.authorImage}" alt="" />` : ""}
         <div>
@@ -618,7 +623,7 @@ async function loadComments(videoId) {
       </div>
     `).join("");
   } catch (e) {
-    modalComments.innerHTML = `<h4>Top comments</h4><div class="status">${escapeHtml(e.message)}</div>`;
+    modalComments.innerHTML = `<h4>${escapeHtml(t("modal.comments"))}</h4><div class="status">${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -628,13 +633,13 @@ async function loadChannelVideos(channelId, currentId) {
     const r = await fetch(`/api/channel-videos?channelId=${encodeURIComponent(channelId)}`);
     const d = await r.json();
     if (!r.ok) {
-      modalRelated.innerHTML = `<h4>More from this channel</h4><div class="status">Couldn't load: ${escapeHtml(d.error || r.statusText)}</div>`;
+      modalRelated.innerHTML = `<h4>${escapeHtml(t("modal.related"))}</h4><div class="status">${escapeHtml(t("modal.relatedError", { err: d.error || r.statusText }))}</div>`;
       return;
     }
     refreshQuota();
     const items = d.items.filter((i) => i.id && i.id !== currentId).slice(0, 8);
     if (!items.length) { modalRelated.innerHTML = ""; return; }
-    modalRelated.innerHTML = `<h4>More from this channel</h4><div class="related-list">` +
+    modalRelated.innerHTML = `<h4>${escapeHtml(t("modal.related"))}</h4><div class="related-list">` +
       items.map((i) => `
         <div class="related-item" data-id="${i.id}">
           ${i.thumbnail ? `<img src="${i.thumbnail}" alt="" />` : ""}
@@ -679,7 +684,7 @@ function median(arr) {
 function renderInsights() {
   const vids = displayedResults.filter((i) => i.kind === "video");
   if (!vids.length) {
-    insightsPanel.innerHTML = `<h3>Insights</h3><div class="status">Run a search with videos to see insights.</div>`;
+    insightsPanel.innerHTML = `<h3>${escapeHtml(t("ins.title"))}</h3><div class="status">${escapeHtml(t("ins.empty"))}</div>`;
     return;
   }
   const views = vids.map((v) => Number(v.statistics?.viewCount || 0));
@@ -719,21 +724,21 @@ function renderInsights() {
     heat[d.getDay()][d.getHours()]++;
   });
   const maxHeat = Math.max(...heat.flat(), 1);
-  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayLabels = ["ins.day.sun","ins.day.mon","ins.day.tue","ins.day.wed","ins.day.thu","ins.day.fri","ins.day.sat"].map(t);
 
   insightsPanel.innerHTML = `
-    <h3>Insights (current view)</h3>
+    <h3>${escapeHtml(t("ins.title"))}</h3>
     <div class="insights-grid">
-      <div class="stat-card"><div class="label">Videos</div><div class="value">${vids.length}</div></div>
-      <div class="stat-card"><div class="label">Total views</div><div class="value">${formatNumber(totalViews)}</div></div>
-      <div class="stat-card"><div class="label">Avg views</div><div class="value">${formatNumber(Math.round(avgViews))}</div></div>
-      <div class="stat-card"><div class="label">Total likes</div><div class="value">${formatNumber(totalLikes)}</div></div>
-      <div class="stat-card"><div class="label">Total runtime</div><div class="value">${formatDuration("PT" + Math.floor(totalRuntime/3600) + "H" + Math.floor((totalRuntime%3600)/60) + "M" + (totalRuntime%60) + "S")}</div></div>
-      <div class="stat-card"><div class="label">Median duration</div><div class="value">${formatSec(Math.round(medDuration))}</div></div>
+      <div class="stat-card"><div class="label">${escapeHtml(t("ins.videos"))}</div><div class="value">${vids.length}</div></div>
+      <div class="stat-card"><div class="label">${escapeHtml(t("ins.totalViews"))}</div><div class="value">${formatNumber(totalViews)}</div></div>
+      <div class="stat-card"><div class="label">${escapeHtml(t("ins.avgViews"))}</div><div class="value">${formatNumber(Math.round(avgViews))}</div></div>
+      <div class="stat-card"><div class="label">${escapeHtml(t("ins.totalLikes"))}</div><div class="value">${formatNumber(totalLikes)}</div></div>
+      <div class="stat-card"><div class="label">${escapeHtml(t("ins.totalRuntime"))}</div><div class="value">${formatDuration("PT" + Math.floor(totalRuntime/3600) + "H" + Math.floor((totalRuntime%3600)/60) + "M" + (totalRuntime%60) + "S")}</div></div>
+      <div class="stat-card"><div class="label">${escapeHtml(t("ins.medianDuration"))}</div><div class="value">${formatSec(Math.round(medDuration))}</div></div>
     </div>
 
     <div class="insights-section">
-      <h4>Top channels</h4>
+      <h4>${escapeHtml(t("ins.topChannels"))}</h4>
       <div class="top-channels">
         ${topChannels.map(([ch, n]) => `
           <div class="top-channel-row">
@@ -746,9 +751,9 @@ function renderInsights() {
     </div>
 
     <div class="insights-section">
-      <h4>Duration distribution</h4>
+      <h4>${escapeHtml(t("ins.durationDist"))}</h4>
       <div class="histogram">
-        ${buckets.map((b) => `<div class="hist-bar" style="height:${(b / maxBucket) * 100}%" title="${b} videos"></div>`).join("")}
+        ${buckets.map((b) => `<div class="hist-bar" style="height:${(b / maxBucket) * 100}%" title="${b}"></div>`).join("")}
       </div>
       <div class="hist-labels">
         ${buckets.map((_, i) => `<div>${formatSec(Math.round(minD + i * bucketSize))}</div>`).join("")}
@@ -756,13 +761,13 @@ function renderInsights() {
     </div>
 
     <div class="insights-section">
-      <h4>Upload time heatmap (local time)</h4>
+      <h4>${escapeHtml(t("ins.heatmap"))}</h4>
       <div class="heatmap">
         <div></div>
         ${Array.from({ length: 24 }, (_, h) => `<div class="hm-label" style="text-align:center">${h}</div>`).join("")}
         ${heat.map((row, d) => `
           <div class="hm-label">${dayLabels[d]}</div>
-          ${row.map((n) => `<div class="hm-cell" style="background:rgba(255,0,51,${n ? 0.2 + 0.8 * (n / maxHeat) : 0});" title="${n} uploads"></div>`).join("")}
+          ${row.map((n) => `<div class="hm-cell" style="background:rgba(255,0,51,${n ? 0.2 + 0.8 * (n / maxHeat) : 0});" title="${n}"></div>`).join("")}
         `).join("")}
       </div>
     </div>
@@ -806,7 +811,7 @@ btnCopyIds.addEventListener("click", () => {
 btnClearWatched.addEventListener("click", () => {
   saveSet(WATCHED_KEY, new Set());
   document.querySelectorAll(".card.watched").forEach((c) => c.classList.remove("watched"));
-  toast("Watched history cleared");
+  toast(t("status.watchedCleared"));
 });
 
 // ----- Keyboard navigation --------------------------------------------
@@ -850,13 +855,13 @@ function updateFocusedCard(cards) {
 function applySearchPayload(data, { fromCache = false } = {}) {
   const info = data.pageInfo || {};
   const filteredNote = data.filteredOut
-    ? ` &nbsp;·&nbsp; <em>${data.filteredOut} filtered out</em>` : "";
+    ? ` &nbsp;·&nbsp; <em>${escapeHtml(t("status.filteredOut", { n: data.filteredOut }))}</em>` : "";
   const paramSummary = Object.entries(data.requestParams || {})
     .filter(([k]) => k !== "part")
     .map(([k, v]) => `<strong>${k}</strong>=${escapeHtml(String(v))}`)
     .join(" &nbsp;·&nbsp; ");
-  const cacheNote = fromCache ? ` &nbsp;·&nbsp; <em>cached — click Refresh to re-query</em>` : "";
-  meta.innerHTML = `Showing ${data.items.length} of ~${info.totalResults || 0} results${filteredNote}${cacheNote} &nbsp;·&nbsp; ${paramSummary}`;
+  const cacheNote = fromCache ? ` &nbsp;·&nbsp; <em>${escapeHtml(t("status.cachedNote"))}</em>` : "";
+  meta.innerHTML = `${escapeHtml(t("status.showing", { shown: data.items.length, total: info.totalResults || 0 }))}${filteredNote}${cacheNote} &nbsp;·&nbsp; ${paramSummary}`;
   meta.classList.remove("hidden");
 
   lastResults = data.items;
@@ -903,7 +908,7 @@ async function runSearch(pageToken = "") {
   if (pageToken) params.set("pageToken", pageToken);
 
   statusEl.className = "status";
-  statusEl.textContent = "Searching...";
+  statusEl.textContent = t("status.searching");
   meta.classList.add("hidden");
   pagination.classList.add("hidden");
   grid.innerHTML = "";
@@ -913,7 +918,7 @@ async function runSearch(pageToken = "") {
     const data = await resp.json();
     if (!resp.ok) {
       statusEl.className = "status error";
-      statusEl.textContent = `Error: ${data.error || resp.statusText}`;
+      statusEl.textContent = t("err.generic", { msg: data.error || resp.statusText });
       return;
     }
     statusEl.textContent = "";
@@ -922,7 +927,7 @@ async function runSearch(pageToken = "") {
     cacheSnapshot(obj, pageToken, data);
   } catch (err) {
     statusEl.className = "status error";
-    statusEl.textContent = `Network error: ${err.message}`;
+    statusEl.textContent = t("err.network", { msg: err.message });
   }
 }
 
@@ -970,6 +975,23 @@ btnRefresh.addEventListener("click", () => {
     runSearch("");
   }
 })();
+
+// Re-render dynamic content whenever the user switches language.
+document.addEventListener("i18n:change", () => {
+  refreshSavedSelect();
+  const region = (regionInput?.value || "US").toUpperCase();
+  categoriesLoadedFor = null;
+  loadCategories(region);
+  if (lastResults.length) renderFromState();
+  if (!insightsPanel.classList.contains("hidden")) renderInsights();
+  if (currentModalItem && !modal.classList.contains("hidden")) {
+    const item = currentModalItem;
+    const link = modalMeta.querySelector(".open-yt");
+    if (link) link.textContent = t("modal.openYt");
+    loadComments(item.id);
+    loadChannelVideos(item.channelId, item.id);
+  }
+});
 
 // Save scroll position periodically so refresh restores it too.
 let scrollSaveTimer = null;

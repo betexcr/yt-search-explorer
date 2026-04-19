@@ -26,22 +26,29 @@
   <meta name="twitter:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}" />
 
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="{{ url_for('static', filename='i18n.js') }}"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
       <span class="logo">▶</span>
-      <h1>YouTube Search Explorer</h1>
+      <h1 data-i18n="app.title">YouTube Search Explorer</h1>
       <div class="topbar-right">
-        <div class="quota" title="Approximate API units used this session">
-          Quota: <strong id="quota-used">0</strong> / 10,000
-          <button type="button" id="quota-reset" class="ghost small">reset</button>
+        <div class="lang-wrap">
+          <select id="lang-select" class="lang-select" data-i18n-attr="title:topbar.langLabel" aria-label="Language">
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+          </select>
+        </div>
+        <div class="quota" data-i18n-attr="title:topbar.quotaTitle">
+          <span data-i18n="topbar.quotaLabel">Quota:</span> <strong id="quota-used">0</strong> / 10,000
+          <button type="button" id="quota-reset" class="ghost small" data-i18n="topbar.quotaReset">reset</button>
         </div>
       </div>
     </div>
-    <p class="tagline">Search the YouTube Data API v3 by every parameter it supports — with filters, insights, and saved searches.</p>
+    <p class="tagline" data-i18n="app.tagline">Search the YouTube Data API v3 by every parameter it supports — with filters, insights, and saved searches.</p>
     {% if not has_key %}
-    <div class="warning">
+    <div class="warning" data-i18n-html="warn.noKey">
       No <code>YOUTUBE_API_KEY</code> found. Copy <code>.env.example</code> to <code>.env</code> and add your key.
     </div>
     {% endif %}
@@ -50,322 +57,322 @@
   <main class="layout">
     <aside class="sidebar">
       <section class="group saved-group">
-        <h2>Saved searches</h2>
+        <h2 data-i18n="grp.saved">Saved searches</h2>
         <div class="saved-row">
           <select id="saved-select">
-            <option value="">— pick saved search —</option>
+            <option value="" data-i18n="saved.pick">— pick saved search —</option>
           </select>
-          <button type="button" id="saved-load" class="ghost small">Load</button>
-          <button type="button" id="saved-delete" class="ghost small">Delete</button>
+          <button type="button" id="saved-load" class="ghost small" data-i18n="saved.load">Load</button>
+          <button type="button" id="saved-delete" class="ghost small" data-i18n="saved.delete">Delete</button>
         </div>
         <div class="saved-row">
-          <input type="text" id="saved-name" placeholder="Name to save current filters..." />
-          <button type="button" id="saved-save" class="primary small">Save</button>
+          <input type="text" id="saved-name" data-i18n-attr="placeholder:saved.namePh" placeholder="Name to save current filters..." />
+          <button type="button" id="saved-save" class="primary small" data-i18n="saved.save">Save</button>
         </div>
       </section>
 
       <form id="search-form">
         <section class="group">
-          <h2>Query</h2>
+          <h2 data-i18n="grp.query">Query</h2>
           <label>
-            <span>Search term (q)</span>
-            <input type="text" name="q" placeholder="e.g. lofi beats" autofocus />
+            <span data-i18n="q.q">Search term (q)</span>
+            <input type="text" name="q" data-i18n-attr="placeholder:q.qPh" placeholder="e.g. lofi beats" autofocus />
           </label>
           <label>
-            <span>Exclude terms (comma separated)</span>
-            <input type="text" name="excludeTerms" placeholder="shorts, remix" />
+            <span data-i18n="q.exclude">Exclude terms (comma separated)</span>
+            <input type="text" name="excludeTerms" data-i18n-attr="placeholder:q.excludePh" placeholder="shorts, remix" />
           </label>
           <label>
-            <span>Any-of terms (OR, comma separated)</span>
-            <input type="text" name="orTerms" placeholder="chill, ambient, focus" />
+            <span data-i18n="q.or">Any-of terms (OR, comma separated)</span>
+            <input type="text" name="orTerms" data-i18n-attr="placeholder:q.orPh" placeholder="chill, ambient, focus" />
           </label>
           <label>
-            <span>Title/description regex (post-filter)</span>
-            <input type="text" name="titleRegex" placeholder="^\[.*\]|\b(review|tutorial)\b" />
+            <span data-i18n="q.regex">Title/description regex (post-filter)</span>
+            <input type="text" name="titleRegex" data-i18n-attr="placeholder:q.regexPh" placeholder="^\[.*\]|\b(review|tutorial)\b" />
           </label>
           <label>
-            <span>Type</span>
+            <span data-i18n="q.type">Type</span>
             <select name="type">
-              <option value="">Any (video, channel, playlist)</option>
-              <option value="video">Video</option>
-              <option value="channel">Channel</option>
-              <option value="playlist">Playlist</option>
-              <option value="video,channel">Video + Channel</option>
-              <option value="video,playlist">Video + Playlist</option>
-              <option value="channel,playlist">Channel + Playlist</option>
+              <option value="" data-i18n="q.type.any">Any (video, channel, playlist)</option>
+              <option value="video" data-i18n="q.type.video">Video</option>
+              <option value="channel" data-i18n="q.type.channel">Channel</option>
+              <option value="playlist" data-i18n="q.type.playlist">Playlist</option>
+              <option value="video,channel" data-i18n="q.type.vc">Video + Channel</option>
+              <option value="video,playlist" data-i18n="q.type.vp">Video + Playlist</option>
+              <option value="channel,playlist" data-i18n="q.type.cp">Channel + Playlist</option>
             </select>
           </label>
           <label>
-            <span>Order</span>
+            <span data-i18n="q.order">Order</span>
             <select name="order">
-              <option value="">Relevance (default)</option>
-              <option value="date">Date</option>
-              <option value="rating">Rating</option>
-              <option value="relevance">Relevance</option>
-              <option value="title">Title</option>
-              <option value="videoCount">Video count</option>
-              <option value="viewCount">View count</option>
+              <option value="" data-i18n="q.order.default">Relevance (default)</option>
+              <option value="date" data-i18n="q.order.date">Date</option>
+              <option value="rating" data-i18n="q.order.rating">Rating</option>
+              <option value="relevance" data-i18n="q.order.relevance">Relevance</option>
+              <option value="title" data-i18n="q.order.title">Title</option>
+              <option value="videoCount" data-i18n="q.order.videoCount">Video count</option>
+              <option value="viewCount" data-i18n="q.order.viewCount">View count</option>
             </select>
           </label>
           <label>
-            <span>Max results (1-50)</span>
+            <span data-i18n="q.maxResults">Max results (1-50)</span>
             <input type="number" name="maxResults" min="1" max="50" value="25" />
           </label>
           <label>
-            <span>Safe search</span>
+            <span data-i18n="q.safeSearch">Safe search</span>
             <select name="safeSearch">
-              <option value="">Default</option>
-              <option value="none">None</option>
-              <option value="moderate">Moderate</option>
-              <option value="strict">Strict</option>
+              <option value="" data-i18n="q.safeSearch.default">Default</option>
+              <option value="none" data-i18n="q.safeSearch.none">None</option>
+              <option value="moderate" data-i18n="q.safeSearch.moderate">Moderate</option>
+              <option value="strict" data-i18n="q.safeSearch.strict">Strict</option>
             </select>
           </label>
         </section>
 
         <section class="group">
-          <h2>Date &amp; Region</h2>
+          <h2 data-i18n="grp.dateRegion">Date &amp; Region</h2>
           <label>
-            <span>Published after</span>
+            <span data-i18n="dr.after">Published after</span>
             <input type="datetime-local" name="publishedAfter" />
           </label>
           <label>
-            <span>Published before</span>
+            <span data-i18n="dr.before">Published before</span>
             <input type="datetime-local" name="publishedBefore" />
           </label>
           <label>
-            <span>Region code (ISO 3166-1)</span>
-            <input type="text" name="regionCode" placeholder="US, GB, JP..." maxlength="2" />
+            <span data-i18n="dr.region">Region code (ISO 3166-1)</span>
+            <input type="text" name="regionCode" data-i18n-attr="placeholder:dr.regionPh" placeholder="US, GB, JP..." maxlength="2" />
           </label>
           <label>
-            <span>Relevance language (ISO 639-1)</span>
-            <input type="text" name="relevanceLanguage" placeholder="en, es, fr..." maxlength="5" />
+            <span data-i18n="dr.lang">Relevance language (ISO 639-1)</span>
+            <input type="text" name="relevanceLanguage" data-i18n-attr="placeholder:dr.langPh" placeholder="en, es, fr..." maxlength="5" />
           </label>
         </section>
 
         <section class="group">
-          <h2>Channel</h2>
+          <h2 data-i18n="grp.channel">Channel</h2>
           <label>
-            <span>Channel ID</span>
-            <input type="text" name="channelId" placeholder="UCxxxx..." />
+            <span data-i18n="ch.id">Channel ID</span>
+            <input type="text" name="channelId" data-i18n-attr="placeholder:ch.idPh" placeholder="UCxxxx..." />
           </label>
           <label>
-            <span>Channel type</span>
+            <span data-i18n="ch.type">Channel type</span>
             <select name="channelType">
-              <option value="">Any</option>
-              <option value="any">any</option>
-              <option value="show">show</option>
+              <option value="" data-i18n="ch.type.any">Any</option>
+              <option value="any" data-i18n="ch.type.any2">any</option>
+              <option value="show" data-i18n="ch.type.show">show</option>
             </select>
           </label>
           <label>
-            <span>Topic ID</span>
-            <input type="text" name="topicId" placeholder="/m/..." />
+            <span data-i18n="ch.topic">Topic ID</span>
+            <input type="text" name="topicId" data-i18n-attr="placeholder:ch.topicPh" placeholder="/m/..." />
           </label>
           <label>
-            <span>Min subscribers (post-filter, +1 quota)</span>
-            <input type="text" name="minSubscribers" placeholder="e.g. 10000" />
+            <span data-i18n="ch.minSubs">Min subscribers (post-filter, +1 quota)</span>
+            <input type="text" name="minSubscribers" data-i18n-attr="placeholder:ch.minSubsPh" placeholder="e.g. 10000" />
           </label>
           <label>
-            <span>Max subscribers</span>
-            <input type="text" name="maxSubscribers" placeholder="e.g. 1000000" />
+            <span data-i18n="ch.maxSubs">Max subscribers</span>
+            <input type="text" name="maxSubscribers" data-i18n-attr="placeholder:ch.maxSubsPh" placeholder="e.g. 1000000" />
           </label>
           <label>
-            <span>Only these channels (IDs or names, comma/newline)</span>
-            <textarea name="includeChannels" rows="2" placeholder="UCxxxx, Some Channel Name"></textarea>
+            <span data-i18n="ch.include">Only these channels (IDs or names, comma/newline)</span>
+            <textarea name="includeChannels" rows="2" data-i18n-attr="placeholder:ch.includePh" placeholder="UCxxxx, Some Channel Name"></textarea>
           </label>
           <label>
-            <span>Exclude these channels</span>
-            <textarea name="excludeChannels" rows="2" placeholder="UCxxxx, Some Channel Name"></textarea>
+            <span data-i18n="ch.exclude">Exclude these channels</span>
+            <textarea name="excludeChannels" rows="2" data-i18n-attr="placeholder:ch.excludePh" placeholder="UCxxxx, Some Channel Name"></textarea>
           </label>
         </section>
 
         <section class="group">
-          <h2>Engagement (post-filter)</h2>
+          <h2 data-i18n="grp.engagement">Engagement (post-filter)</h2>
           <div class="row2">
             <label>
-              <span>Min views</span>
-              <input type="text" name="minViews" placeholder="10000" />
+              <span data-i18n="eng.minViews">Min views</span>
+              <input type="text" name="minViews" data-i18n-attr="placeholder:eng.minViewsPh" placeholder="10000" />
             </label>
             <label>
-              <span>Max views</span>
+              <span data-i18n="eng.maxViews">Max views</span>
               <input type="text" name="maxViews" />
             </label>
           </div>
           <div class="row2">
             <label>
-              <span>Min likes</span>
+              <span data-i18n="eng.minLikes">Min likes</span>
               <input type="text" name="minLikes" />
             </label>
             <label>
-              <span>Max likes</span>
+              <span data-i18n="eng.maxLikes">Max likes</span>
               <input type="text" name="maxLikes" />
             </label>
           </div>
           <div class="row2">
             <label>
-              <span>Min comments</span>
+              <span data-i18n="eng.minComments">Min comments</span>
               <input type="text" name="minComments" />
             </label>
             <label>
-              <span>Max comments</span>
+              <span data-i18n="eng.maxComments">Max comments</span>
               <input type="text" name="maxComments" />
             </label>
           </div>
           <label>
-            <span>Min like-to-view ratio (%)</span>
-            <input type="text" name="minLikeRatio" placeholder="e.g. 2" />
+            <span data-i18n="eng.likeRatio">Min like-to-view ratio (%)</span>
+            <input type="text" name="minLikeRatio" data-i18n-attr="placeholder:eng.likeRatioPh" placeholder="e.g. 2" />
           </label>
           <label>
-            <span>Min comment-to-view ratio (%)</span>
-            <input type="text" name="minCommentRatio" placeholder="e.g. 0.5" />
-          </label>
-        </section>
-
-        <section class="group">
-          <h2>Location</h2>
-          <label>
-            <span>Location (lat,lng)</span>
-            <input type="text" name="location" placeholder="37.42307,-122.08427" />
-          </label>
-          <label>
-            <span>Location radius</span>
-            <input type="text" name="locationRadius" placeholder="10km (max 1000km)" />
+            <span data-i18n="eng.commentRatio">Min comment-to-view ratio (%)</span>
+            <input type="text" name="minCommentRatio" data-i18n-attr="placeholder:eng.commentRatioPh" placeholder="e.g. 0.5" />
           </label>
         </section>
 
         <section class="group">
-          <h2>Video filters <small>(type=video)</small></h2>
+          <h2 data-i18n="grp.location">Location</h2>
           <label>
-            <span>Event type</span>
+            <span data-i18n="loc.location">Location (lat,lng)</span>
+            <input type="text" name="location" data-i18n-attr="placeholder:loc.locationPh" placeholder="37.42307,-122.08427" />
+          </label>
+          <label>
+            <span data-i18n="loc.radius">Location radius</span>
+            <input type="text" name="locationRadius" data-i18n-attr="placeholder:loc.radiusPh" placeholder="10km (max 1000km)" />
+          </label>
+        </section>
+
+        <section class="group">
+          <h2><span data-i18n="grp.videoFilters">Video filters</span> <small data-i18n="grp.videoFiltersSmall">(type=video)</small></h2>
+          <label>
+            <span data-i18n="vf.eventType">Event type</span>
             <select name="eventType">
-              <option value="">Any</option>
-              <option value="completed">Completed</option>
-              <option value="live">Live</option>
-              <option value="upcoming">Upcoming</option>
+              <option value="" data-i18n="vf.eventType.any">Any</option>
+              <option value="completed" data-i18n="vf.eventType.completed">Completed</option>
+              <option value="live" data-i18n="vf.eventType.live">Live</option>
+              <option value="upcoming" data-i18n="vf.eventType.upcoming">Upcoming</option>
             </select>
           </label>
           <label>
-            <span>Video duration (API bucket)</span>
+            <span data-i18n="vf.duration">Video duration (API bucket)</span>
             <select name="videoDuration">
-              <option value="">Any</option>
-              <option value="short">Short (&lt; 4 min)</option>
-              <option value="medium">Medium (4-20 min)</option>
-              <option value="long">Long (&gt; 20 min)</option>
+              <option value="" data-i18n="vf.duration.any">Any</option>
+              <option value="short" data-i18n="vf.duration.short">Short (&lt; 4 min)</option>
+              <option value="medium" data-i18n="vf.duration.medium">Medium (4-20 min)</option>
+              <option value="long" data-i18n="vf.duration.long">Long (&gt; 20 min)</option>
             </select>
           </label>
           <label>
-            <span>Precise duration preset</span>
+            <span data-i18n="vf.preset">Precise duration preset</span>
             <select name="durationPreset">
-              <option value="">Any</option>
-              <option value="shorts">Shorts (&lt; 1 min)</option>
-              <option value="1to4">1 – 4 min</option>
-              <option value="under5">Under 5 min</option>
-              <option value="4to10">4 – 10 min</option>
-              <option value="5to15">5 – 15 min</option>
-              <option value="10to20">10 – 20 min</option>
-              <option value="15to30">15 – 30 min</option>
-              <option value="20to60">20 – 60 min</option>
-              <option value="over30">Over 30 min</option>
-              <option value="over60">Over 1 hour</option>
+              <option value="" data-i18n="vf.preset.any">Any</option>
+              <option value="shorts" data-i18n="vf.preset.shorts">Shorts (&lt; 1 min)</option>
+              <option value="1to4" data-i18n="vf.preset.1to4">1 – 4 min</option>
+              <option value="under5" data-i18n="vf.preset.under5">Under 5 min</option>
+              <option value="4to10" data-i18n="vf.preset.4to10">4 – 10 min</option>
+              <option value="5to15" data-i18n="vf.preset.5to15">5 – 15 min</option>
+              <option value="10to20" data-i18n="vf.preset.10to20">10 – 20 min</option>
+              <option value="15to30" data-i18n="vf.preset.15to30">15 – 30 min</option>
+              <option value="20to60" data-i18n="vf.preset.20to60">20 – 60 min</option>
+              <option value="over30" data-i18n="vf.preset.over30">Over 30 min</option>
+              <option value="over60" data-i18n="vf.preset.over60">Over 1 hour</option>
             </select>
           </label>
           <div class="row2">
             <label>
-              <span>Min duration</span>
-              <input type="text" name="minDuration" placeholder="1:30 or 90 or 2m30s" />
+              <span data-i18n="vf.minDuration">Min duration</span>
+              <input type="text" name="minDuration" data-i18n-attr="placeholder:vf.minDurationPh" placeholder="1:30 or 90 or 2m30s" />
             </label>
             <label>
-              <span>Max duration</span>
-              <input type="text" name="maxDuration" placeholder="10:00" />
+              <span data-i18n="vf.maxDuration">Max duration</span>
+              <input type="text" name="maxDuration" data-i18n-attr="placeholder:vf.maxDurationPh" placeholder="10:00" />
             </label>
           </div>
           <label>
-            <span>Video definition <small style="color:#777">(API only distinguishes HD vs SD)</small></span>
+            <span><span data-i18n="vf.definition">Video definition</span> <small style="color:#777" data-i18n="vf.definitionSmall">(API only distinguishes HD vs SD)</small></span>
             <select name="videoDefinition">
-              <option value="">Any definition</option>
-              <option value="high">HD only (≥ 720p — incl. 1080p, 1440p, 4K, 8K)</option>
-              <option value="standard">SD only (&lt; 720p)</option>
+              <option value="" data-i18n="vf.definition.any">Any definition</option>
+              <option value="high" data-i18n="vf.definition.hd">HD only (≥ 720p — incl. 1080p, 1440p, 4K, 8K)</option>
+              <option value="standard" data-i18n="vf.definition.sd">SD only (&lt; 720p)</option>
             </select>
           </label>
           <label>
-            <span>Video dimension</span>
+            <span data-i18n="vf.dimension">Video dimension</span>
             <select name="videoDimension">
-              <option value="">Any</option>
+              <option value="" data-i18n="vf.dimension.any">Any</option>
               <option value="2d">2D</option>
               <option value="3d">3D</option>
             </select>
           </label>
           <label>
-            <span>Video caption</span>
+            <span data-i18n="vf.caption">Video caption</span>
             <select name="videoCaption">
-              <option value="">Any</option>
-              <option value="closedCaption">Closed caption</option>
-              <option value="none">None</option>
+              <option value="" data-i18n="vf.caption.any">Any</option>
+              <option value="closedCaption" data-i18n="vf.caption.cc">Closed caption</option>
+              <option value="none" data-i18n="vf.caption.none">None</option>
             </select>
           </label>
           <label>
-            <span>Video category <small style="color:#777">(updates with region)</small></span>
+            <span><span data-i18n="vf.category">Video category</span> <small style="color:#777" data-i18n="vf.categorySmall">(updates with region)</small></span>
             <select name="videoCategoryId" id="video-category-select">
-              <option value="">Any category</option>
-              <option value="1">Film &amp; Animation</option>
-              <option value="2">Autos &amp; Vehicles</option>
-              <option value="10">Music</option>
-              <option value="15">Pets &amp; Animals</option>
-              <option value="17">Sports</option>
-              <option value="19">Travel &amp; Events</option>
-              <option value="20">Gaming</option>
-              <option value="22">People &amp; Blogs</option>
-              <option value="23">Comedy</option>
-              <option value="24">Entertainment</option>
-              <option value="25">News &amp; Politics</option>
-              <option value="26">Howto &amp; Style</option>
-              <option value="27">Education</option>
-              <option value="28">Science &amp; Technology</option>
-              <option value="29">Nonprofits &amp; Activism</option>
+              <option value="" data-i18n="vf.category.any">Any category</option>
+              <option value="1" data-i18n="vf.category.1">Film &amp; Animation</option>
+              <option value="2" data-i18n="vf.category.2">Autos &amp; Vehicles</option>
+              <option value="10" data-i18n="vf.category.10">Music</option>
+              <option value="15" data-i18n="vf.category.15">Pets &amp; Animals</option>
+              <option value="17" data-i18n="vf.category.17">Sports</option>
+              <option value="19" data-i18n="vf.category.19">Travel &amp; Events</option>
+              <option value="20" data-i18n="vf.category.20">Gaming</option>
+              <option value="22" data-i18n="vf.category.22">People &amp; Blogs</option>
+              <option value="23" data-i18n="vf.category.23">Comedy</option>
+              <option value="24" data-i18n="vf.category.24">Entertainment</option>
+              <option value="25" data-i18n="vf.category.25">News &amp; Politics</option>
+              <option value="26" data-i18n="vf.category.26">Howto &amp; Style</option>
+              <option value="27" data-i18n="vf.category.27">Education</option>
+              <option value="28" data-i18n="vf.category.28">Science &amp; Technology</option>
+              <option value="29" data-i18n="vf.category.29">Nonprofits &amp; Activism</option>
             </select>
           </label>
           <label>
-            <span>Video type</span>
+            <span data-i18n="vf.videoType">Video type</span>
             <select name="videoType">
-              <option value="">Any</option>
-              <option value="episode">Episode</option>
-              <option value="movie">Movie</option>
+              <option value="" data-i18n="vf.videoType.any">Any</option>
+              <option value="episode" data-i18n="vf.videoType.episode">Episode</option>
+              <option value="movie" data-i18n="vf.videoType.movie">Movie</option>
             </select>
           </label>
           <label>
-            <span>Video license</span>
+            <span data-i18n="vf.license">Video license</span>
             <select name="videoLicense">
-              <option value="">Any</option>
-              <option value="creativeCommon">Creative Commons</option>
-              <option value="youtube">Standard YouTube</option>
+              <option value="" data-i18n="vf.license.any">Any</option>
+              <option value="creativeCommon" data-i18n="vf.license.cc">Creative Commons</option>
+              <option value="youtube" data-i18n="vf.license.standard">Standard YouTube</option>
             </select>
           </label>
           <label>
-            <span>Video embeddable</span>
+            <span data-i18n="vf.embeddable">Video embeddable</span>
             <select name="videoEmbeddable">
-              <option value="">Any</option>
-              <option value="true">Embeddable only</option>
+              <option value="" data-i18n="vf.embeddable.any">Any</option>
+              <option value="true" data-i18n="vf.embeddable.only">Embeddable only</option>
             </select>
           </label>
           <label>
-            <span>Video syndicated</span>
+            <span data-i18n="vf.syndicated">Video syndicated</span>
             <select name="videoSyndicated">
-              <option value="">Any</option>
-              <option value="true">Syndicated only</option>
+              <option value="" data-i18n="vf.syndicated.any">Any</option>
+              <option value="true" data-i18n="vf.syndicated.only">Syndicated only</option>
             </select>
           </label>
           <label>
-            <span>Paid product placement</span>
+            <span data-i18n="vf.paid">Paid product placement</span>
             <select name="videoPaidProductPlacement">
-              <option value="">Any</option>
-              <option value="true">Has paid placement</option>
-              <option value="false">No paid placement</option>
+              <option value="" data-i18n="vf.paid.any">Any</option>
+              <option value="true" data-i18n="vf.paid.has">Has paid placement</option>
+              <option value="false" data-i18n="vf.paid.none">No paid placement</option>
             </select>
           </label>
         </section>
 
         <div class="actions">
-          <button type="submit" class="primary">Search</button>
-          <button type="reset" class="ghost">Reset</button>
+          <button type="submit" class="primary" data-i18n="act.search">Search</button>
+          <button type="reset" class="ghost" data-i18n="act.reset">Reset</button>
         </div>
       </form>
     </aside>
@@ -374,72 +381,72 @@
       <div class="toolbar">
         <div class="toolbar-left">
           <label class="tb-field">
-            <span>Sort</span>
+            <span data-i18n="tb.sort">Sort</span>
             <select id="sort-select">
-              <option value="">Default (API order)</option>
-              <option value="views-desc">Views ↓</option>
-              <option value="views-asc">Views ↑</option>
-              <option value="likes-desc">Likes ↓</option>
-              <option value="comments-desc">Comments ↓</option>
-              <option value="duration-desc">Duration ↓</option>
-              <option value="duration-asc">Duration ↑</option>
-              <option value="published-desc">Newest</option>
-              <option value="published-asc">Oldest</option>
-              <option value="title-asc">Title A→Z</option>
-              <option value="likeratio-desc">Like/View ratio ↓</option>
+              <option value="" data-i18n="tb.sort.default">Default (API order)</option>
+              <option value="views-desc" data-i18n="tb.sort.views-desc">Views ↓</option>
+              <option value="views-asc" data-i18n="tb.sort.views-asc">Views ↑</option>
+              <option value="likes-desc" data-i18n="tb.sort.likes-desc">Likes ↓</option>
+              <option value="comments-desc" data-i18n="tb.sort.comments-desc">Comments ↓</option>
+              <option value="duration-desc" data-i18n="tb.sort.duration-desc">Duration ↓</option>
+              <option value="duration-asc" data-i18n="tb.sort.duration-asc">Duration ↑</option>
+              <option value="published-desc" data-i18n="tb.sort.published-desc">Newest</option>
+              <option value="published-asc" data-i18n="tb.sort.published-asc">Oldest</option>
+              <option value="title-asc" data-i18n="tb.sort.title-asc">Title A→Z</option>
+              <option value="likeratio-desc" data-i18n="tb.sort.likeratio-desc">Like/View ratio ↓</option>
             </select>
           </label>
           <label class="tb-field">
-            <span>View</span>
+            <span data-i18n="tb.view">View</span>
             <select id="view-select">
-              <option value="grid">Grid</option>
-              <option value="compact">Compact</option>
-              <option value="list">List</option>
+              <option value="grid" data-i18n="tb.view.grid">Grid</option>
+              <option value="compact" data-i18n="tb.view.compact">Compact</option>
+              <option value="list" data-i18n="tb.view.list">List</option>
             </select>
           </label>
           <label class="tb-toggle">
             <input type="checkbox" id="hide-watched" />
-            <span>Hide watched</span>
+            <span data-i18n="tb.hideWatched">Hide watched</span>
           </label>
           <label class="tb-toggle">
             <input type="checkbox" id="only-starred" />
-            <span>Starred only</span>
+            <span data-i18n="tb.onlyStarred">Starred only</span>
           </label>
         </div>
         <div class="toolbar-right">
-          <button type="button" id="btn-refresh" class="ghost small" title="Re-query the API with current filters">Refresh</button>
-          <button type="button" id="btn-insights" class="ghost small">Insights</button>
-          <button type="button" id="btn-export-csv" class="ghost small">CSV</button>
-          <button type="button" id="btn-export-json" class="ghost small">JSON</button>
-          <button type="button" id="btn-copy-urls" class="ghost small">Copy URLs</button>
-          <button type="button" id="btn-copy-ids" class="ghost small">Copy IDs</button>
-          <button type="button" id="btn-clear-watched" class="ghost small" title="Clear watched history">Clear watched</button>
+          <button type="button" id="btn-refresh" class="ghost small" data-i18n="tb.refresh" data-i18n-attr="title:tb.refreshTitle" title="Re-query the API with current filters">Refresh</button>
+          <button type="button" id="btn-insights" class="ghost small" data-i18n="tb.insights">Insights</button>
+          <button type="button" id="btn-export-csv" class="ghost small" data-i18n="tb.csv">CSV</button>
+          <button type="button" id="btn-export-json" class="ghost small" data-i18n="tb.json">JSON</button>
+          <button type="button" id="btn-copy-urls" class="ghost small" data-i18n="tb.copyUrls">Copy URLs</button>
+          <button type="button" id="btn-copy-ids" class="ghost small" data-i18n="tb.copyIds">Copy IDs</button>
+          <button type="button" id="btn-clear-watched" class="ghost small" data-i18n="tb.clearWatched" data-i18n-attr="title:tb.clearWatchedTitle" title="Clear watched history">Clear watched</button>
         </div>
       </div>
 
       <div id="insights" class="insights hidden"></div>
-      <div id="status" class="status">Enter a search term and hit <kbd>Search</kbd>. Keyboard: <kbd>j</kbd>/<kbd>k</kbd> navigate, <kbd>Enter</kbd> play, <kbd>s</kbd> star, <kbd>/</kbd> focus search.</div>
+      <div id="status" class="status" data-i18n-html="status.emptyHtml">Enter a search term and hit <kbd>Search</kbd>. Keyboard: <kbd>j</kbd>/<kbd>k</kbd> navigate, <kbd>Enter</kbd> play, <kbd>s</kbd> star, <kbd>/</kbd> focus search.</div>
       <div id="meta" class="meta hidden"></div>
       <div id="grid" class="grid"></div>
       <div id="pagination" class="pagination hidden">
-        <button id="prev-btn" class="ghost">← Previous</button>
-        <button id="next-btn" class="ghost">Next →</button>
+        <button id="prev-btn" class="ghost" data-i18n="page.prev">← Previous</button>
+        <button id="next-btn" class="ghost" data-i18n="page.next">Next →</button>
       </div>
     </section>
   </main>
 
-  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Video player">
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" data-i18n-attr="aria-label:modal.ariaLabel" aria-label="Video player">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
-      <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+      <button class="modal-close" id="modal-close" data-i18n-attr="aria-label:modal.closeAria" aria-label="Close">×</button>
       <div class="modal-player" id="modal-player"></div>
       <div class="modal-controls">
         <label class="tb-toggle">
           <input type="checkbox" id="autoplay-queue" />
-          <span>Autoplay next result</span>
+          <span data-i18n="modal.autoplay">Autoplay next result</span>
         </label>
         <div class="speed-buttons" id="speed-buttons">
-          <span class="speed-label">Speed:</span>
+          <span class="speed-label" data-i18n="modal.speed">Speed:</span>
           <button type="button" data-speed="0.5" class="ghost small">0.5×</button>
           <button type="button" data-speed="0.75" class="ghost small">0.75×</button>
           <button type="button" data-speed="1" class="ghost small active">1×</button>
@@ -448,9 +455,9 @@
           <button type="button" data-speed="2" class="ghost small">2×</button>
         </div>
         <div class="clip-inputs">
-          <label>Start <input type="text" id="clip-start" placeholder="0:00" size="5" /></label>
-          <label>End <input type="text" id="clip-end" placeholder="0:30" size="5" /></label>
-          <button type="button" id="clip-apply" class="ghost small">Apply clip</button>
+          <label><span data-i18n="modal.start">Start</span> <input type="text" id="clip-start" placeholder="0:00" size="5" /></label>
+          <label><span data-i18n="modal.end">End</span> <input type="text" id="clip-end" placeholder="0:30" size="5" /></label>
+          <button type="button" id="clip-apply" class="ghost small" data-i18n="modal.apply">Apply clip</button>
         </div>
       </div>
       <div class="modal-meta" id="modal-meta"></div>
