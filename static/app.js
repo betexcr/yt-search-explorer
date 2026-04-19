@@ -364,12 +364,16 @@ function cardHtml(item, starred) {
   }
 
   const isVideo = item.kind === "video";
+  const flagBadges = [];
+  if (item.ageRestricted) flagBadges.push(`<span class="flag-badge age" title="Age-restricted — won't play inline; use Open on YouTube">18+</span>`);
+  if (isVideo && item.embeddable === false) flagBadges.push(`<span class="flag-badge noembed" title="Creator disabled embedding — use Open on YouTube">No embed</span>`);
   const thumb = `
     <div class="thumb-wrap">
       ${item.thumbnail
         ? `<img class="thumb" src="${item.thumbnail}" alt="" loading="lazy" />`
         : `<div class="thumb"></div>`}
       <span class="kind-badge">${item.kind}</span>
+      ${flagBadges.length ? `<div class="flag-badges">${flagBadges.join("")}</div>` : ""}
       ${isVideo ? `<div class="play-overlay"></div>` : ""}
       <button type="button" class="star-btn" data-star="${item.id}" title="Star">${starred ? "★" : "☆"}</button>
     </div>`;
@@ -447,6 +451,7 @@ function toggleStar(id, card) {
 
 function attachHoverPreview(card, item) {
   if (item.kind !== "video" || !item.id) return;
+  if (item.ageRestricted || item.embeddable === false) return;
   const wrap = card.querySelector(".thumb-wrap");
   let timer = null;
   let iframe = null;
@@ -483,20 +488,36 @@ function openModal(item, idx = -1) {
   watched.add(item.id);
   saveSet(WATCHED_KEY, watched);
 
-  modalPlayer.innerHTML = `<div id="yt-player-host"></div>`;
-  ytPlayer = new YT.Player("yt-player-host", {
-    videoId: item.id,
-    playerVars: { autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
-    events: {
-      onStateChange: (e) => {
-        // 0 = ended
-        if (e.data === 0 && autoplayQueueCb.checked) playNextInQueue();
+  const cannotEmbed = item.ageRestricted || item.embeddable === false;
+  if (cannotEmbed) {
+    const reason = item.ageRestricted
+      ? "This video is age-restricted."
+      : "The creator disabled embedding for this video.";
+    modalPlayer.innerHTML = `
+      <div class="player-fallback">
+        <div class="player-fallback-icon">${item.ageRestricted ? "18+" : "⊘"}</div>
+        <div class="player-fallback-title">Can't play inline</div>
+        <div class="player-fallback-text">${escapeHtml(reason)} If you're signed in to YouTube in this browser it will play on youtube.com.</div>
+        <a class="player-fallback-btn" href="${item.url}" target="_blank" rel="noopener">Open on YouTube →</a>
+      </div>
+    `;
+    ytPlayer = null;
+  } else {
+    modalPlayer.innerHTML = `<div id="yt-player-host"></div>`;
+    ytPlayer = new YT.Player("yt-player-host", {
+      videoId: item.id,
+      playerVars: { autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+      events: {
+        onStateChange: (e) => {
+          // 0 = ended
+          if (e.data === 0 && autoplayQueueCb.checked) playNextInQueue();
+        },
+        onReady: () => {
+          resetSpeedButtons();
+        },
       },
-      onReady: () => {
-        resetSpeedButtons();
-      },
-    },
-  });
+    });
+  }
 
   modalMeta.innerHTML = `
     <h3>${escapeHtml(item.title)}</h3>

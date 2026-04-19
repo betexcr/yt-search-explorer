@@ -210,7 +210,7 @@ def _fetch_video_stats(video_ids):
             VIDEOS_URL,
             params={
                 "key": YOUTUBE_API_KEY,
-                "part": "statistics,contentDetails",
+                "part": "statistics,contentDetails,status",
                 "id": ",".join(chunk),
             },
             timeout=15,
@@ -222,6 +222,7 @@ def _fetch_video_stats(video_ids):
             out[item["id"]] = {
                 "statistics": item.get("statistics", {}),
                 "contentDetails": item.get("contentDetails", {}),
+                "status": item.get("status", {}),
             }
     return out
 
@@ -385,6 +386,12 @@ def search():
                 cd = stats_map[vid]["contentDetails"]
                 entry["duration"] = cd.get("duration", "")
                 entry["definition"] = cd.get("definition", "")
+                yt_rating = (cd.get("contentRating") or {}).get("ytRating", "")
+                entry["ageRestricted"] = yt_rating == "ytAgeRestricted"
+                st = stats_map[vid].get("status") or {}
+                embeddable = st.get("embeddable")
+                entry["embeddable"] = True if embeddable is None else bool(embeddable)
+                entry["privacyStatus"] = st.get("privacyStatus", "")
         elif kind == "youtube#channel":
             cid = id_obj.get("channelId")
             entry["id"] = cid
