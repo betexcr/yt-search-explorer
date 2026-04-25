@@ -128,6 +128,37 @@ textarea:focus { outline: none; border-color: var(--accent); background: #262626
   margin: 0 0 12px;
 }
 .group h2 small { text-transform: none; letter-spacing: 0; color: #777; font-size: 11px; }
+.group h2.group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.group h2.group-toggle::after {
+  content: "-";
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+}
+.group h2.group-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.group.is-collapsed {
+  padding-bottom: 10px;
+}
+.group.is-collapsed h2.group-toggle {
+  margin-bottom: 0;
+}
+.group.is-collapsed h2.group-toggle::after {
+  content: "+";
+}
+.group.is-collapsed .group-content {
+  display: none;
+}
 
 .saved-group .saved-row {
   display: flex;
@@ -170,9 +201,13 @@ input:focus, select:focus {
   display: flex;
   gap: 10px;
   position: sticky;
-  bottom: -20px;
+  top: -20px;
+  z-index: 5;
   background: var(--panel);
-  padding: 12px 0 4px;
+  margin: -20px -20px 18px;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.28);
 }
 
 button {

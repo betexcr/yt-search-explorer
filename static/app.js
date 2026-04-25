@@ -59,6 +59,7 @@ let focusedIdx = -1;
 let currentModalItem = null;
 let ytPlayer = null;
 let lastModalClip = { start: null, end: null };
+let modalHistoryActive = false;
 
 // ----- LocalStorage wrappers ------------------------------------------
 const LS = {
@@ -173,6 +174,41 @@ function applyObjectToForm(obj) {
     const el = form.elements.namedItem(k);
     if (el) el.value = v;
   }
+}
+
+function setupCollapsibleGroups() {
+  const groups = Array.from(form.querySelectorAll(":scope > .group"));
+  groups.forEach((group, idx) => {
+    if (group.dataset.collapsibleReady) return;
+
+    const heading = group.querySelector(":scope > h2");
+    if (!heading) return;
+
+    const content = document.createElement("div");
+    content.className = "group-content";
+    content.id = `filter-group-${idx}`;
+    while (heading.nextSibling) content.appendChild(heading.nextSibling);
+    group.appendChild(content);
+
+    const setCollapsed = (collapsed) => {
+      group.classList.toggle("is-collapsed", collapsed);
+      heading.setAttribute("aria-expanded", String(!collapsed));
+    };
+
+    heading.classList.add("group-toggle");
+    heading.setAttribute("role", "button");
+    heading.setAttribute("tabindex", "0");
+    heading.setAttribute("aria-controls", content.id);
+    heading.addEventListener("click", () => setCollapsed(!group.classList.contains("is-collapsed")));
+    heading.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      setCollapsed(!group.classList.contains("is-collapsed"));
+    });
+
+    group.dataset.collapsibleReady = "true";
+    setCollapsed(idx !== 0);
+  });
 }
 
 function writeHash(obj) {
@@ -535,6 +571,10 @@ function openModal(item, idx = -1) {
   document.body.style.overflow = "hidden";
   clipStart.value = "";
   clipEnd.value = "";
+  if (!modalHistoryActive) {
+    history.pushState({ ytxModal: true }, "", location.href);
+    modalHistoryActive = true;
+  }
 
   loadComments(item.id);
   loadChannelVideos(item.channelId, item.id);
@@ -545,7 +585,8 @@ function openModal(item, idx = -1) {
   }
 }
 
-function closeModal() {
+function closeModal({ fromHistory = false } = {}) {
+  if (modal.classList.contains("hidden")) return;
   modal.classList.add("hidden");
   try { ytPlayer?.destroy?.(); } catch {}
   ytPlayer = null;
@@ -555,6 +596,10 @@ function closeModal() {
   modalRelated.innerHTML = "";
   document.body.style.overflow = "";
   currentModalItem = null;
+  if (modalHistoryActive) {
+    modalHistoryActive = false;
+    if (!fromHistory) history.back();
+  }
 }
 
 function playNextInQueue() {
@@ -571,6 +616,11 @@ modalClose.addEventListener("click", closeModal);
 modalBackdrop.addEventListener("click", closeModal);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
+});
+window.addEventListener("popstate", () => {
+  if (modalHistoryActive && !modal.classList.contains("hidden")) {
+    closeModal({ fromHistory: true });
+  }
 });
 
 // Speed control
@@ -935,6 +985,14 @@ form.addEventListener("submit", (e) => {
   e.preventDefault();
   runSearch("");
 });
+form.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || e.isComposing) return;
+  const tag = (e.target.tagName || "").toLowerCase();
+  if (!["input", "select", "textarea"].includes(tag)) return;
+  if (["button", "submit", "reset"].includes(e.target.type)) return;
+  e.preventDefault();
+  form.requestSubmit();
+});
 prevBtn.addEventListener("click", () => currentTokens.prev && runSearch(currentTokens.prev));
 nextBtn.addEventListener("click", () => currentTokens.next && runSearch(currentTokens.next));
 btnRefresh.addEventListener("click", () => {
@@ -944,6 +1002,7 @@ btnRefresh.addEventListener("click", () => {
 
 // ----- Init -----------------------------------------------------------
 (function init() {
+  setupCollapsibleGroups();
   loadPrefs();
   refreshSavedSelect();
   refreshQuota();
